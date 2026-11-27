@@ -1,0 +1,40 @@
+---
+name: Vulnerabilities
+
+'on':
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # yamllint disable rule:line-length
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        # yamllint enable rule:line-length
+        with:
+          persist-credentials: false
+      # yamllint disable rule:line-length
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5  # v7.1.0
+        # yamllint enable rule:line-length
+        with:
+          go-version: stable
+          check-latest: true
+          cache: true
+      - name: govulncheck
+        # yamllint disable rule:line-length
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -tags integration ./...
+        # yamllint enable rule:line-length

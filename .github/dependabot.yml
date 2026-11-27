@@ -1,0 +1,48 @@
+---
+version: 2
+updates:
+  # Monitor Go dependencies (go.mod)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The OpenWrt rootfs images the integration job runs against. CI reads them
+  # from ci/images (scripts/ci-image.sh), as Dependabot only looks at
+  # Dockerfiles, not at docker run commands in scripts or workflows.
+  - package-ecosystem: "docker"
+    directory: "/ci/images"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    # Keep each Dockerfile.openwrt-<major> pinned to its own OpenWrt release
+    # series (21.02, 22.03, 23.05, 24.10, 25.12) while accepting point updates.
+    ignore:
+      - dependency-name: "ghcr.io/openwrt/rootfs"
+        update-types:
+          - "version-update:semver-major"
+
+  # Monitor GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    # The codeql-action steps of one workflow must run the same version, so
+    # they are bumped together, in one pull request with the other actions.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
